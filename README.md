@@ -1,11 +1,11 @@
 # Pendulums
 
-This is a Python project that simulates pendulums, springs and masses. It doesn't work perfectly but it might work well enough to simulate Kapitza's pendulum. 
-For this, a new class will be needed for a string that is always the same length but that's pretty much identical to the already existing string class.
-And another class will be needed to create an oscillating pivot point.
+This is a Python project that simulates Kapitza's Pendulum. This is a set up where a mass is connected to an arm of fixed length, which is connected at the other end to a pivot point that oscillates quickly up and down.
 
-The main file to execute is `simulation.py`. `object_cls.py` and `system_cls.py` also contain important code that often needs modifying.
+For systems where the square of the product of the angular fequency of the oscillations of the pivot point ($\omega$) and the amplitude of the oscillations of the pivot point ($A$), is greater than two times the product of the acceleration due to gravity ($g$) and the length of the arm ($l$),...
 
-Generally lots of things have strange names because the code is largely copied from antoher of my projects.
+$(\omega A)^2 > 2 g l$
 
-When I get some more time (after Schek's ODEs) I will add comments, clean up the code and try to create Kapitza's pendulum.
+...the effective potential of the mass has a minimum when it is vertically above (and below) the pivot. This means that the mass appears to swing as if gravity was acting upwards.
+
+More detail and a derivation can be found on the [Wikipedia page](https://en.wikipedia.org/wiki/Kapitza%27s_pendulum)
