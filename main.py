@@ -1,72 +1,83 @@
+# import libraries and classes
 import pygame
-from system_cls import *
-import constants as const
+from object_cls import *
+from data_window import *
+import math
 
+# create a pygame window and define some constants for later
 pygame.init()
+width, height = 1000, 800
+background_colour = (0,0,0)
+window = pygame.display.set_mode((width, height))
+pygame.display.set_caption("Kapitza's Pendulum Simulation")
 
-width, height = const.width, const.height
+running = True
+clock = pygame.time.Clock()
 
-frame_rate = const.frame_rate
+frame_rate = 240
 dt = 1/frame_rate
 print(f"The simulation is running at {frame_rate}Hz")
 
-window = pygame.display.set_mode((width, height))
-pygame.display.set_caption("Pendulum Simulation")
+# define some constants. These can all be changed to vary the set up
+offset = Vector2(500, 600)
+g = 400
+l = 400
+mass = 10
+radius = 10
+A = 20 # << l
+w = 40 # >> sqrt(g/l)
+ydirection = Vector2(0,1)
 
-font = pygame.font.SysFont("comicsansms", 18)
-small_font = pygame.font.SysFont("comicsansms", 14)
+# create functions that are the position and velocity over time of the pivot point
+def oscillation_pos(time) -> Vector2:
+    return offset+ydirection*A*math.sin(w*time)
 
-class Main:
-    def __init__(self):
-        self.cam = Camera(font, small_font, window)
-        self.dt = dt
-        self.running = True
-        self.clock = pygame.time.Clock()
-        offset = Vector2(const.width/2,const.height/4)
+def oscillation_vel(time) -> Vector2:
+    return ydirection*A*w*math.cos(w*time)
 
-        self.objects = [
-            #          pos,                  vel,           colour,      mass, radius, grav
-            Mass(offset+Vector2(200,100), Vector2.zero, Colour(255,255,255), 10, 10, Vector2(0,400)),
-            #Mass(offset+Vector2(100,0), Vector2.zero, Colour(255,  0,255), 1, 10, Vector2(0,400)),
-            #Mass(offset+Vector2(200,100), Vector2.zero, Colour(0,255,255), 8, 10, Vector2(0,400)),
-            #Mass(offset+Vector2(100,0), Vector2.zero, Colour(0,  0,255), 1, 10, Vector2(0,400))
-            
-            #Mass(offset+Vector2(0,283), Vector2(0,-65), Colour(255,255,255), 10, 10, Vector2(0,400))
-        ]
-        
-        self.strings = [
-            #                           start,           end,            colour,     real_length
-            #InelasticLightString(self.objects[0], self.objects[1], Colour(255,255,255)),
-            InelasticLightString(FixedPoint(offset), self.objects[0], Colour(255,255,255), 300),
-            #InelasticLightString(self.objects[2], self.objects[3], Colour(255,255,255)),
-            #InelasticLightString(FixedPoint(offset), self.objects[2], Colour(255,255,255), 300)
-        ]
+# create lists of all the things. I have used lists so it can be extended to more objects 
+objects = [Mass(offset+Vector2(80,-math.sqrt(l*l-6400)), Vector2.zero, (255,255,255), mass, radius, Vector2(0,g))]
+points = [Point(oscillation_pos, oscillation_vel)]
+strings = [String(points[0], objects[0], (255,255,255), l)]
 
-        self.springs = [
-            #                start,           end,            colour,   spring constant, real_length, default_width
-            #Spring(FixedPoint(offset), self.objects[0], Colour(255,255,255), 30, -2)
-        ]
-        
-        print(f"Starting the simulation with {len(self.objects)} bodies")
-        self.system = System3(self.objects, self.strings, self.springs, UniformGravitationalField(Vector2(0,400)), self.dt, self.cam)
+# initialise the data window
+datawindow = DataWindow(10, dt) # max 10 lines
+datawindow.show()
 
-    def start(self):
-        while self.running:
-            self.clock.tick(frame_rate)
-            window.fill(const.background_colour)
-            self.update()
-            pygame.display.update()
-        pygame.quit()
+# draw the strings and masses to the pygame window
+def display():
+    for line in strings:
+        pygame.draw.line(window, line.colour, line.start.pos.tuple, line.end.pos.tuple)
+    for mass in objects:
+        pygame.draw.circle(window, mass.colour, mass.pos.tuple, mass.radius)
 
-    def update(self):
-        self.takeInputs()
-        self.system.update_all()
-    
-    def takeInputs(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
+# sum all the forces on all the masses, then calculate their new positions, and find the new position of the pivot
+def move_all():
+    for body in objects:
+        body.experience_gravity()
+    for string in strings:
+        string.pull(dt)
+    for body in objects:
+        body.accelerate(dt)
+        body.move(dt)
+    for point in points:
+        point.reposition(dt)
 
+# check that the user hasn't tried to close the window
+def takeInputs():
+    global running
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
 
-main = Main()
-main.start()
+# contiually calculate the new positions and update both the pygame and the data windows
+while running:
+    clock.tick(frame_rate)
+    window.fill(background_colour)
+    takeInputs()
+    move_all()
+    display()
+    datawindow.update_plot_data(objects[0].ke, objects[0].pe+10*400*600, objects[0].energy+10*400*600)
+    pygame.display.update()
+
+pygame.quit()
