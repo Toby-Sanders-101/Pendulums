@@ -1,4 +1,4 @@
-# Pendula
+# Kapitza's Pendulum
 
 This is a Python project that simulates Kapitza's Pendulum. This is a set up where a mass is connected to an arm of fixed length, which is connected at the other end to a pivot point that oscillates quickly up and down.
 
